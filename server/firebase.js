@@ -22,19 +22,22 @@ if (fs.existsSync(serviceAccountPath)) {
 
     if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
         try {
-            // Support both literal newlines and escaped \n
-            let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+            // Clean up any accidental spaces or newlines from Render settings
+            const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+            const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+            let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
+
             if (privateKey.includes('\\n')) {
                 privateKey = privateKey.replace(/\\n/g, '\n');
             }
             
             // Clean up any extra quotes that might have been pasted
-            privateKey = privateKey.trim().replace(/^"|"$/g, '');
+            privateKey = privateKey.replace(/^"|"$/g, '');
 
             admin.initializeApp({
                 credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    projectId: projectId,
+                    clientEmail: clientEmail,
                     privateKey: privateKey,
                 })
             });
