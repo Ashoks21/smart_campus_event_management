@@ -15,17 +15,36 @@ if (fs.existsSync(serviceAccountPath)) {
     console.warn('Please follow the instructions to generate this file from Firebase Console.');
     
     // Fallback to individual env variables if they exist
-    if (process.env.FIREBASE_PROJECT_ID) {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            })
-        });
-        console.log('✅ Firebase initialized using environment variables');
+    console.log('Checking Environment Variables:');
+    console.log('- Project ID:', process.env.FIREBASE_PROJECT_ID ? 'PRESENT' : 'MISSING');
+    console.log('- Client Email:', process.env.FIREBASE_CLIENT_EMAIL ? 'PRESENT' : 'MISSING');
+    console.log('- Private Key:', process.env.FIREBASE_PRIVATE_KEY ? 'PRESENT' : 'MISSING');
+
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
+        try {
+            // Support both literal newlines and escaped \n
+            let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+            if (privateKey.includes('\\n')) {
+                privateKey = privateKey.replace(/\\n/g, '\n');
+            }
+            
+            // Clean up any extra quotes that might have been pasted
+            privateKey = privateKey.trim().replace(/^"|"$/g, '');
+
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: privateKey,
+                })
+            });
+            console.log('✅ Firebase initialized using environment variables');
+            console.log('Key starts with:', privateKey.substring(0, 20) + '...');
+        } catch (initErr) {
+            console.error('❌ Firebase Init Error:', initErr.message);
+        }
     } else {
-        console.error('❌ Firebase initialization failed: Missing credentials.');
+        console.error('❌ Firebase initialization failed: Missing required environment variables.');
     }
 }
 
